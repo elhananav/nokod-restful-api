@@ -1,4 +1,4 @@
-const apiKey = '7T#p2Km$8q!Lz&9Wc@yE5sF'; // Replace with your secret key
+const apiKey = '7T#p2Km$8q!Lz&9Wc@yE5sF';
 
 function authenticateApiKey(req, res, next) {
     const providedApiKey = req.headers['api_key'];
@@ -10,5 +10,8 @@ function authenticateApiKey(req, res, next) {
     }
   }
 
-module.exports = authenticateApiKey;
+module.exports = {
+  apiKey: apiKey,
+  authenticateApiKey: authenticateApiKey
+}
 

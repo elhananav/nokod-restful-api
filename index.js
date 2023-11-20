@@ -1,28 +1,28 @@
-const express = require('express');
-const Joi = require('joi');
-const bodyParser = require('body-parser');
-const swaggerUi = require('swagger-ui-express');
-const authenticateToken = require('./auth'); // Path to the authentication middleware
-const specs = require('./swaggerConfig'); // Import the Swagger configuration
+const express = require("express");
+const Joi = require("joi");
+const bodyParser = require("body-parser");
+const swaggerUi = require("swagger-ui-express");
+const { authenticateApiKey } = require("./auth"); // Path to the authentication middleware
+const specs = require("./swaggerConfig"); // Import the Swagger configuration
 const app = express();
 
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 app.use(bodyParser.json());
-app.use(express.json())
+app.use(express.json());
 
+//all methods need authentication with API key except get all tasks
 app.use((req, res, next) => {
-    if (req.path !== '/task' || req.method !== 'GET') {
-      authenticateToken(req, res, next);
-    } else {
-      next(); // Skip authentication for GET /task route
-    }
-  });
-  
+  if (req.path !== "/task" || req.method !== "GET") {
+    authenticateApiKey(req, res, next);
+  } else {
+    next(); // Skip authentication for GET /task route
+  }
+});
+
 const tasks = [
-    {id:1, title: "task1"},
-    {id:2, title: "task2"},
-    {id:3, title: "task3"}
+  { id: 1, title: "task1" },
+  { id: 2, title: "task2" },
+  { id: 3, title: "task3" },
 ];
 
 /**
@@ -40,8 +40,8 @@ const tasks = [
  *               type: array
  */
 
-app.get('/task', (req, res) => {
-    res.send(tasks)
+app.get("/task", (req, res) => {
+  res.send(tasks);
 });
 
 /**
@@ -92,10 +92,11 @@ app.get('/task', (req, res) => {
  *             example:
  *               message: The TASK with the given ID was not found
  */
-app.get('/task/:id', (req, res) => {
-    const task = tasks.find(c => c.id === parseInt(req.params.id));
-    if(!task) return res.status(404).send('the TASK with given ID was not found');
-    res.send(task);
+app.get("/task/:id", (req, res) => {
+  const task = tasks.find((c) => c.id === parseInt(req.params.id));
+  if (!task)
+    return res.status(404).send("the TASK with given ID was not found");
+  res.send(task);
 });
 
 /**
@@ -160,17 +161,16 @@ app.get('/task/:id', (req, res) => {
  *             example:
  *               message: Unauthorized - API key missing or invalid
  */
-app.post('/task', (req, res) => { 
-    const { error } = validateTodo(req.body);
-    if (error) return res.status(400).send(error.details[0].message)
-    const task = {
-        id: tasks.length + 1,
-        title: req.body.title
-    }
-    tasks.push(task)
-    res.send(task)
+app.post("/task", (req, res) => {
+  const { error } = validateTodo(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+  const task = {
+    id: tasks.length + 1,
+    title: req.body.title,
+  };
+  tasks.push(task);
+  res.send(task);
 });
-
 
 /**
  * @swagger
@@ -242,13 +242,13 @@ app.post('/task', (req, res) => {
  *             example:
  *               message: The task with the given ID was not found
  */
-app.put('/task/:id', (req, res) => {
-    const task = tasks.find(c => c.id === parseInt(req.params.id));
-    if(!task) res.status(404).send('the task with given ID was not found');
-    const { error } = validateTodo(req.body);
-    if (error) return res.status(400).send(error.details[0].message)
-    task.title = req.body.title
-    res.send(task);
+app.put("/task/:id", (req, res) => {
+  const task = tasks.find((c) => c.id === parseInt(req.params.id));
+  if (!task) res.status(404).send("the task with given ID was not found");
+  const { error } = validateTodo(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+  task.title = req.body.title;
+  res.send(task);
 });
 
 /**
@@ -299,21 +299,22 @@ app.put('/task/:id', (req, res) => {
  *             example:
  *               message: The task with the given ID was not found
  */
-app.delete('/task/:id', (req, res) => {
-    const task = tasks.find(c => c.id === parseInt(req.params.id));
-    if(!task) res.status(404).send('the task with given ID was not found');
-    
-    const index = tasks.indexOf(task);
-    tasks.splice(index, 1);
-    res.send(task);
+app.delete("/task/:id", (req, res) => {
+  const task = tasks.find((c) => c.id === parseInt(req.params.id));
+  if (!task) res.status(404).send("the task with given ID was not found");
+
+  const index = tasks.indexOf(task);
+  tasks.splice(index, 1);
+  res.send(task);
 });
 
 function validateTodo(body) {
-    const schema = {
-        title: Joi.string().required()
-    };
-    return Joi.validate(body, schema);
+  const schema = {
+    title: Joi.string().required(),
+  };
+  return Joi.validate(body, schema);
 }
 
-const port = process.env.PORT || 3000
-app.listen(port, () => console.log('Listening on port}...'))
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log("Listening on port..."));
+module.exports = app;
