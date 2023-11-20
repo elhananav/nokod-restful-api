@@ -49,6 +49,16 @@ describe("tasks List API Tests", () => {
         done();
       });
   });
+
+    //Test to check authentication
+    it('should fail due to authentication', (done) => {
+        chai.request(app)
+          .get(`/task/${taskId}`)
+          .end((err, res) => {
+            expect(res).to.have.status(401);
+            done();
+          });
+      });
   
   //Test DELETE endpoint
   it("should delete a task (authenticated)", (done) => {
