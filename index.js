@@ -1,14 +1,24 @@
 const express = require('express');
 const Joi = require('joi');
+const bodyParser = require('body-parser');
 const swaggerUi = require('swagger-ui-express');
+const authenticateToken = require('./auth'); // Path to the authentication middleware
 const specs = require('./swaggerConfig'); // Import the Swagger configuration
 const app = express();
 
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-
+app.use(bodyParser.json());
 app.use(express.json())
 
+app.use((req, res, next) => {
+    if (req.path !== '/task' || req.method !== 'GET') {
+      authenticateToken(req, res, next);
+    } else {
+      next(); // Skip authentication for GET /task route
+    }
+  });
+  
 const tasks = [
     {id:1, title: "task1"},
     {id:2, title: "task2"},
@@ -36,44 +46,26 @@ app.get('/task', (req, res) => {
 
 /**
  * @swagger
- * /task/:id:
+ * /task/{id}:
  *   get:
- *     summary: Get task by id
- *     description: Get task by id
+ *     summary: Get a task by ID
+ *     description: Retrieve a task item by its ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the task item to retrieve
+ *         schema:
+ *           type: integer
+ *       - in: header
+ *         name: api_key
+ *         required: true
+ *         description: API key for authentication
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Successful operation
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- */
-app.get('/task/:id', (req, res) => {
-    const task = tasks.find(c => c.id === parseInt(req.params.id));
-    if(!task) return res.status(404).send('the TASK with given ID was not found');
-    res.send(task);
-});
-
-/**
- * @swagger
- * /task:
- *   post:
- *     summary: Create a new TASK
- *     description: Create a new TASK item
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *             example:
- *               title: Sample TASK
- *     responses:
- *       200:
- *         description: Successful creation of a new TASK
+ *         description: Successful retrieval of the task
  *         content:
  *           application/json:
  *             schema:
@@ -85,7 +77,66 @@ app.get('/task/:id', (req, res) => {
  *                   type: string
  *             example:
  *               id: 1
- *               title: Sample TASK
+ *               title: Sample Task
+ *       401:
+ *         description: Unauthorized - API key missing or invalid
+ *       404:
+ *         description: Task with the given ID was not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             example:
+ *               message: The TASK with the given ID was not found
+ */
+app.get('/task/:id', (req, res) => {
+    const task = tasks.find(c => c.id === parseInt(req.params.id));
+    if(!task) return res.status(404).send('the TASK with given ID was not found');
+    res.send(task);
+});
+
+/**
+ * @swagger
+ * /task:
+ *   post:
+ *     summary: Create a new task
+ *     description: Create a new task item
+ *     parameters:
+ *       - in: header
+ *         name: api_key
+ *         required: true
+ *         description: API key for authentication
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *             example:
+ *               title: Sample Task
+ *     responses:
+ *       200:
+ *         description: Successful creation of a new task
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 title:
+ *                   type: string
+ *             example:
+ *               id: 1
+ *               title: Sample Task
  *       400:
  *         description: Bad request due to validation error
  *         content:
@@ -96,7 +147,18 @@ app.get('/task/:id', (req, res) => {
  *                 message:
  *                   type: string
  *             example:
- *               message: title field is incorect
+ *               message: Error message describing the validation error
+ *       401:
+ *         description: Unauthorized - API key missing or invalid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             example:
+ *               message: Unauthorized - API key missing or invalid
  */
 app.post('/task', (req, res) => { 
     const { error } = validateTodo(req.body);
@@ -109,19 +171,26 @@ app.post('/task', (req, res) => {
     res.send(task)
 });
 
+
 /**
  * @swagger
  * /task/{id}:
  *   put:
- *     summary: Update a TASK by ID
- *     description: Update an existing TASK item by its ID
+ *     summary: Update a task by ID
+ *     description: Update an existing task item by its ID
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: ID of the TASK item to be updated
+ *         description: ID of the task item to update
  *         schema:
  *           type: integer
+ *       - in: header
+ *         name: api_key
+ *         required: true
+ *         description: API key for authentication
+ *         schema:
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -132,10 +201,10 @@ app.post('/task', (req, res) => {
  *               title:
  *                 type: string
  *             example:
- *               title: Updated TASK
+ *               title: Updated Task Title
  *     responses:
  *       200:
- *         description: Successful update of the TASK
+ *         description: Successful update of the task
  *         content:
  *           application/json:
  *             schema:
@@ -147,7 +216,7 @@ app.post('/task', (req, res) => {
  *                   type: string
  *             example:
  *               id: 1
- *               title: Updated TASK
+ *               title: Updated Task Title
  *       400:
  *         description: Bad request due to validation error
  *         content:
@@ -158,9 +227,11 @@ app.post('/task', (req, res) => {
  *                 message:
  *                   type: string
  *             example:
- *               message: title field is incorect
+ *               message: Error message describing the validation error
+ *       401:
+ *         description: Unauthorized - API key missing or invalid
  *       404:
- *         description: TASK with the given ID was not found
+ *         description: Task with the given ID was not found
  *         content:
  *           application/json:
  *             schema:
@@ -169,7 +240,7 @@ app.post('/task', (req, res) => {
  *                 message:
  *                   type: string
  *             example:
- *               message: The TASK with the given ID was not found
+ *               message: The task with the given ID was not found
  */
 app.put('/task/:id', (req, res) => {
     const task = tasks.find(c => c.id === parseInt(req.params.id));
@@ -184,18 +255,24 @@ app.put('/task/:id', (req, res) => {
  * @swagger
  * /task/{id}:
  *   delete:
- *     summary: Delete a TASK by ID
- *     description: Delete an existing TASK item by its ID
+ *     summary: Delete a task by ID
+ *     description: Delete an existing task item by its ID
  *     parameters:
  *       - in: path
- *         title: id
+ *         name: id
  *         required: true
- *         description: ID of the TASK item to be deleted
+ *         description: ID of the task item to delete
  *         schema:
  *           type: integer
+ *       - in: header
+ *         name: api_key
+ *         required: true
+ *         description: API key for authentication
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
- *         description: Successful deletion of the TASK
+ *         description: Successful deletion of the task
  *         content:
  *           application/json:
  *             schema:
@@ -207,9 +284,11 @@ app.put('/task/:id', (req, res) => {
  *                   type: string
  *             example:
  *               id: 1
- *               title: Deleted TASK
+ *               title: Deleted Task
+ *       401:
+ *         description: Unauthorized - API key missing or invalid
  *       404:
- *         description: TASK with the given ID was not found
+ *         description: Task with the given ID was not found
  *         content:
  *           application/json:
  *             schema:
@@ -218,7 +297,7 @@ app.put('/task/:id', (req, res) => {
  *                 message:
  *                   type: string
  *             example:
- *               message: The TASK with the given ID was not found
+ *               message: The task with the given ID was not found
  */
 app.delete('/task/:id', (req, res) => {
     const task = tasks.find(c => c.id === parseInt(req.params.id));
