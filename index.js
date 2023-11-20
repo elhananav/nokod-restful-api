@@ -1,6 +1,7 @@
 const express = require("express");
 const Joi = require("joi");
 const bodyParser = require("body-parser");
+const Task = require('./models/Task');
 const swaggerUi = require("swagger-ui-express");
 const { authenticateApiKey } = require("./auth"); // Path to the authentication middleware
 const specs = require("./swaggerConfig"); // Import the Swagger configuration
@@ -20,10 +21,10 @@ app.use((req, res, next) => {
 });
 
 const tasks = [
-  { id: 1, title: "task1" },
-  { id: 2, title: "task2" },
-  { id: 3, title: "task3" },
-];
+    new Task(1, 'task1'),
+    new Task(2, 'task2'),
+    new Task(3, 'task3')
+  ];
 
 /**
  * @swagger
