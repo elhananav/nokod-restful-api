@@ -7,21 +7,20 @@ const app = express();
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
-
 app.use(express.json())
 
-const todos = [
-    {id:1, name: "todO1"},
-    {id:2, name: "todO2"},
-    {id:3, name: "todO3"}
+const tasks = [
+    {id:1, title: "task1"},
+    {id:2, title: "task2"},
+    {id:3, title: "task3"}
 ];
 
 /**
  * @swagger
- * /todo:
+ * /task:
  *   get:
- *     summary: Get all todos
- *     description: Retrieve a list of todos
+ *     summary: Get all tasks
+ *     description: Retrieve a list of tasks
  *     responses:
  *       200:
  *         description: Successful operation
@@ -31,16 +30,16 @@ const todos = [
  *               type: array
  */
 
-app.get('/todo', (req, res) => {
-    res.send(todos)
+app.get('/task', (req, res) => {
+    res.send(tasks)
 });
 
 /**
  * @swagger
- * /todo/:id:
+ * /task/:id:
  *   get:
- *     summary: Get todo by id
- *     description: Get todo by id
+ *     summary: Get task by id
+ *     description: Get task by id
  *     responses:
  *       200:
  *         description: Successful operation
@@ -49,18 +48,18 @@ app.get('/todo', (req, res) => {
  *             schema:
  *               type: array
  */
-app.get('/todo/:id', (req, res) => {
-    const todo = todos.find(c => c.id === parseInt(req.params.id));
-    if(!todo) return res.status(404).send('the toDo with given ID was not found');
-    res.send(todo);
+app.get('/task/:id', (req, res) => {
+    const task = tasks.find(c => c.id === parseInt(req.params.id));
+    if(!task) return res.status(404).send('the TASK with given ID was not found');
+    res.send(task);
 });
 
 /**
  * @swagger
- * /todo:
+ * /task:
  *   post:
- *     summary: Create a new TODO
- *     description: Create a new TODO item
+ *     summary: Create a new TASK
+ *     description: Create a new TASK item
  *     requestBody:
  *       required: true
  *       content:
@@ -68,13 +67,13 @@ app.get('/todo/:id', (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               title:
  *                 type: string
  *             example:
- *               name: Sample TODO
+ *               title: Sample TASK
  *     responses:
  *       200:
- *         description: Successful creation of a new TODO
+ *         description: Successful creation of a new TASK
  *         content:
  *           application/json:
  *             schema:
@@ -82,11 +81,11 @@ app.get('/todo/:id', (req, res) => {
  *               properties:
  *                 id:
  *                   type: integer
- *                 name:
+ *                 title:
  *                   type: string
  *             example:
  *               id: 1
- *               name: Sample TODO
+ *               title: Sample TASK
  *       400:
  *         description: Bad request due to validation error
  *         content:
@@ -97,30 +96,30 @@ app.get('/todo/:id', (req, res) => {
  *                 message:
  *                   type: string
  *             example:
- *               message: Name field is incorect
+ *               message: title field is incorect
  */
-app.post('/todo', (req, res) => { 
+app.post('/task', (req, res) => { 
     const { error } = validateTodo(req.body);
     if (error) return res.status(400).send(error.details[0].message)
-    const todo = {
-        id: todos.length + 1,
-        name: req.body.name
+    const task = {
+        id: tasks.length + 1,
+        title: req.body.title
     }
-    todos.push(todo)
-    res.send(todo)
+    tasks.push(task)
+    res.send(task)
 });
 
 /**
  * @swagger
- * /todo/{id}:
+ * /task/{id}:
  *   put:
- *     summary: Update a TODO by ID
- *     description: Update an existing TODO item by its ID
+ *     summary: Update a TASK by ID
+ *     description: Update an existing TASK item by its ID
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: ID of the TODO item to be updated
+ *         description: ID of the TASK item to be updated
  *         schema:
  *           type: integer
  *     requestBody:
@@ -130,13 +129,13 @@ app.post('/todo', (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               title:
  *                 type: string
  *             example:
- *               name: Updated TODO
+ *               title: Updated TASK
  *     responses:
  *       200:
- *         description: Successful update of the TODO
+ *         description: Successful update of the TASK
  *         content:
  *           application/json:
  *             schema:
@@ -144,11 +143,11 @@ app.post('/todo', (req, res) => {
  *               properties:
  *                 id:
  *                   type: integer
- *                 name:
+ *                 title:
  *                   type: string
  *             example:
  *               id: 1
- *               name: Updated TODO
+ *               title: Updated TASK
  *       400:
  *         description: Bad request due to validation error
  *         content:
@@ -159,9 +158,9 @@ app.post('/todo', (req, res) => {
  *                 message:
  *                   type: string
  *             example:
- *               message: Name field is incorect
+ *               message: title field is incorect
  *       404:
- *         description: TODO with the given ID was not found
+ *         description: TASK with the given ID was not found
  *         content:
  *           application/json:
  *             schema:
@@ -170,33 +169,33 @@ app.post('/todo', (req, res) => {
  *                 message:
  *                   type: string
  *             example:
- *               message: The TODO with the given ID was not found
+ *               message: The TASK with the given ID was not found
  */
-app.put('/todo/:id', (req, res) => {
-    const todo = todos.find(c => c.id === parseInt(req.params.id));
-    if(!todo) res.status(404).send('the todo with given ID was not found');
+app.put('/task/:id', (req, res) => {
+    const task = tasks.find(c => c.id === parseInt(req.params.id));
+    if(!task) res.status(404).send('the task with given ID was not found');
     const { error } = validateTodo(req.body);
     if (error) return res.status(400).send(error.details[0].message)
-    todo.name = req.body.name
-    res.send(todo);
+    task.title = req.body.title
+    res.send(task);
 });
 
 /**
  * @swagger
- * /todo/{id}:
+ * /task/{id}:
  *   delete:
- *     summary: Delete a TODO by ID
- *     description: Delete an existing TODO item by its ID
+ *     summary: Delete a TASK by ID
+ *     description: Delete an existing TASK item by its ID
  *     parameters:
  *       - in: path
- *         name: id
+ *         title: id
  *         required: true
- *         description: ID of the TODO item to be deleted
+ *         description: ID of the TASK item to be deleted
  *         schema:
  *           type: integer
  *     responses:
  *       200:
- *         description: Successful deletion of the TODO
+ *         description: Successful deletion of the TASK
  *         content:
  *           application/json:
  *             schema:
@@ -204,13 +203,13 @@ app.put('/todo/:id', (req, res) => {
  *               properties:
  *                 id:
  *                   type: integer
- *                 name:
+ *                 title:
  *                   type: string
  *             example:
  *               id: 1
- *               name: Deleted TODO
+ *               title: Deleted TASK
  *       404:
- *         description: TODO with the given ID was not found
+ *         description: TASK with the given ID was not found
  *         content:
  *           application/json:
  *             schema:
@@ -219,20 +218,20 @@ app.put('/todo/:id', (req, res) => {
  *                 message:
  *                   type: string
  *             example:
- *               message: The TODO with the given ID was not found
+ *               message: The TASK with the given ID was not found
  */
-app.delete('/todo/:id', (req, res) => {
-    const todo = todos.find(c => c.id === parseInt(req.params.id));
-    if(!todo) res.status(404).send('the todo with given ID was not found');
+app.delete('/task/:id', (req, res) => {
+    const task = tasks.find(c => c.id === parseInt(req.params.id));
+    if(!task) res.status(404).send('the task with given ID was not found');
     
-    const index = todos.indexOf(todo);
-    todos.splice(index, 1);
-    res.send(todo);
+    const index = tasks.indexOf(task);
+    tasks.splice(index, 1);
+    res.send(task);
 });
 
 function validateTodo(body) {
     const schema = {
-        name: Joi.string().min(3).required()
+        title: Joi.string().required()
     };
     return Joi.validate(body, schema);
 }
